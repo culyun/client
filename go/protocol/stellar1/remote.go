@@ -183,6 +183,124 @@ func (o PaymentPost) DeepCopy() PaymentPost {
 	}
 }
 
+type PaymentSummary struct {
+	Stellar     *PaymentSummaryStellar `codec:"stellar,omitempty" json:"stellar,omitempty"`
+	Keybase     *PaymentSummaryKeybase `codec:"keybase,omitempty" json:"keybase,omitempty"`
+	StellarTxID TransactionID          `codec:"stellarTxID" json:"stellarTxID"`
+	From        AccountID              `codec:"from" json:"from"`
+	To          AccountID              `codec:"to" json:"to"`
+	Asset       Asset                  `codec:"asset" json:"asset"`
+	Amount      string                 `codec:"amount" json:"amount"`
+}
+
+func (o PaymentSummary) DeepCopy() PaymentSummary {
+	return PaymentSummary{
+		Stellar: (func(x *PaymentSummaryStellar) *PaymentSummaryStellar {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.Stellar),
+		Keybase: (func(x *PaymentSummaryKeybase) *PaymentSummaryKeybase {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.Keybase),
+		StellarTxID: o.StellarTxID.DeepCopy(),
+		From:        o.From.DeepCopy(),
+		To:          o.To.DeepCopy(),
+		Asset:       o.Asset.DeepCopy(),
+		Amount:      o.Amount,
+	}
+}
+
+type PaymentSummaryKeybase struct {
+	KbTxID       KeybaseTransactionID `codec:"kbTxID" json:"kbTxID"`
+	Status       TransactionStatus    `codec:"status" json:"status"`
+	SubmitErrMsg string               `codec:"submitErrMsg" json:"submitErrMsg"`
+	Ctime        TimeMs               `codec:"ctime" json:"ctime"`
+	Rtime        TimeMs               `codec:"rtime" json:"rtime"`
+	FromUID      *keybase1.UID        `codec:"fromUID,omitempty" json:"fromUID,omitempty"`
+	FromDeviceID *keybase1.DeviceID   `codec:"fromDeviceID,omitempty" json:"fromDeviceID,omitempty"`
+	To           *keybase1.UID        `codec:"to,omitempty" json:"to,omitempty"`
+	Note         *EncryptedNote       `codec:"note,omitempty" json:"note,omitempty"`
+}
+
+func (o PaymentSummaryKeybase) DeepCopy() PaymentSummaryKeybase {
+	return PaymentSummaryKeybase{
+		KbTxID:       o.KbTxID.DeepCopy(),
+		Status:       o.Status.DeepCopy(),
+		SubmitErrMsg: o.SubmitErrMsg,
+		Ctime:        o.Ctime.DeepCopy(),
+		Rtime:        o.Rtime.DeepCopy(),
+		FromUID: (func(x *keybase1.UID) *keybase1.UID {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.FromUID),
+		FromDeviceID: (func(x *keybase1.DeviceID) *keybase1.DeviceID {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.FromDeviceID),
+		To: (func(x *keybase1.UID) *keybase1.UID {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.To),
+		Note: (func(x *EncryptedNote) *EncryptedNote {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.Note),
+	}
+}
+
+type PaymentSummaryStellar struct {
+	LedgerID    uint64   `codec:"ledgerID" json:"ledgerID"`
+	OperationID uint64   `codec:"operationID" json:"operationID"`
+	Fee         *FeePaid `codec:"fee,omitempty" json:"fee,omitempty"`
+	Ctime       TimeMs   `codec:"ctime" json:"ctime"`
+}
+
+func (o PaymentSummaryStellar) DeepCopy() PaymentSummaryStellar {
+	return PaymentSummaryStellar{
+		LedgerID:    o.LedgerID,
+		OperationID: o.OperationID,
+		Fee: (func(x *FeePaid) *FeePaid {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.Fee),
+		Ctime: o.Ctime.DeepCopy(),
+	}
+}
+
+type FeePaid struct {
+	Amount uint64    `codec:"amount" json:"amount"`
+	Payer  AccountID `codec:"payer" json:"payer"`
+}
+
+func (o FeePaid) DeepCopy() FeePaid {
+	return FeePaid{
+		Amount: o.Amount,
+		Payer:  o.Payer.DeepCopy(),
+	}
+}
+
 type BalancesArg struct {
 	Uid       keybase1.UID `codec:"uid" json:"uid"`
 	AccountID AccountID    `codec:"accountID" json:"accountID"`
@@ -192,6 +310,12 @@ type RecentTransactionsArg struct {
 	Uid       keybase1.UID `codec:"uid" json:"uid"`
 	AccountID AccountID    `codec:"accountID" json:"accountID"`
 	Count     int          `codec:"count" json:"count"`
+}
+
+type RecentPaymentsArg struct {
+	Uid        keybase1.UID `codec:"uid" json:"uid"`
+	AccountID  AccountID    `codec:"accountID" json:"accountID"`
+	Pagination *Pagination  `codec:"pagination,omitempty" json:"pagination,omitempty"`
 }
 
 type TransactionArg struct {
@@ -207,6 +331,7 @@ type SubmitPaymentArg struct {
 type RemoteInterface interface {
 	Balances(context.Context, BalancesArg) ([]Balance, error)
 	RecentTransactions(context.Context, RecentTransactionsArg) ([]TransactionSummary, error)
+	RecentPayments(context.Context, RecentPaymentsArg) ([]PaymentSummary, error)
 	Transaction(context.Context, TransactionArg) (TransactionDetails, error)
 	SubmitPayment(context.Context, SubmitPaymentArg) (PaymentResult, error)
 }
@@ -243,6 +368,22 @@ func RemoteProtocol(i RemoteInterface) rpc.Protocol {
 						return
 					}
 					ret, err = i.RecentTransactions(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
+			"recentPayments": {
+				MakeArg: func() interface{} {
+					ret := make([]RecentPaymentsArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]RecentPaymentsArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]RecentPaymentsArg)(nil), args)
+						return
+					}
+					ret, err = i.RecentPayments(ctx, (*typedArgs)[0])
 					return
 				},
 				MethodType: rpc.MethodCall,
@@ -294,6 +435,11 @@ func (c RemoteClient) Balances(ctx context.Context, __arg BalancesArg) (res []Ba
 
 func (c RemoteClient) RecentTransactions(ctx context.Context, __arg RecentTransactionsArg) (res []TransactionSummary, err error) {
 	err = c.Cli.Call(ctx, "stellar.1.remote.recentTransactions", []interface{}{__arg}, &res)
+	return
+}
+
+func (c RemoteClient) RecentPayments(ctx context.Context, __arg RecentPaymentsArg) (res []PaymentSummary, err error) {
+	err = c.Cli.Call(ctx, "stellar.1.remote.recentPayments", []interface{}{__arg}, &res)
 	return
 }
 

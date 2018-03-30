@@ -102,6 +102,28 @@
           "name": "Ledger"
         }
       ]
+    },
+    {
+      "type": "record",
+      "name": "Pagination",
+      "fields": [
+        {
+          "type": "bytes",
+          "name": "next"
+        },
+        {
+          "type": "bytes",
+          "name": "previous"
+        },
+        {
+          "type": "int",
+          "name": "num"
+        },
+        {
+          "type": "boolean",
+          "name": "last"
+        }
+      ]
     }
   ],
   "messages": {},

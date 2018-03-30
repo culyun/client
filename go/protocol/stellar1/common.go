@@ -125,6 +125,32 @@ func (o PaymentResult) DeepCopy() PaymentResult {
 	}
 }
 
+type Pagination struct {
+	Next     []byte `codec:"next" json:"next"`
+	Previous []byte `codec:"previous" json:"previous"`
+	Num      int    `codec:"num" json:"num"`
+	Last     bool   `codec:"last" json:"last"`
+}
+
+func (o Pagination) DeepCopy() Pagination {
+	return Pagination{
+		Next: (func(x []byte) []byte {
+			if x == nil {
+				return nil
+			}
+			return append([]byte{}, x...)
+		})(o.Next),
+		Previous: (func(x []byte) []byte {
+			if x == nil {
+				return nil
+			}
+			return append([]byte{}, x...)
+		})(o.Previous),
+		Num:  o.Num,
+		Last: o.Last,
+	}
+}
+
 type CommonInterface interface {
 }
 
